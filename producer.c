@@ -11,7 +11,7 @@ int main(void)
 	int sockfd;
 	int ret = 0;
 	char buf[1024] = {0};
-	char *string = "putmsg#aoligei";
+	char input[1024] = {0};
 	struct sockaddr_in servaddr;
 
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -31,12 +31,8 @@ int main(void)
 		return -1;
 	}
 
-	write(sockfd, string, strlen(string));
-
-#if 0
-	read(sockfd, buf, 1024);
-	printf("read from server: [%s]\n", buf);
-#endif
+	strncpy(input, "putmsg#aoligei", 1024);
+	write(sockfd, input, strlen(input));
 
 	close(sockfd);
 

@@ -1,2 +1,2 @@
 # RMQ
-Ri Ge MQ
+Rige Message Queue

@@ -12,6 +12,7 @@
 
 #define LISTEN_PORT 9527
 #define MAXEVENTS 64
+#define MSGFILE "msgfile"
 
 void make_nonblocking(int fd);
 int putmsg(FILE *fp, char *buf, int buflen);
@@ -30,10 +31,22 @@ int main(int argc, char *argv[])
 	struct sockaddr_in servaddr;
 	struct sockaddr_in cliaddr;
 	socklen_t socklen;
-	FILE *fp = NULL;
+	FILE *rfp = NULL;
+	FILE *wfp = NULL;
 
-	fp = fopen("./msgfile", "w+");
-	assert(fp!=NULL);
+	if (-1 == access("./msg", F_OK)) {
+		mkdir("./msg", 0777);
+	}
+
+	if (-1 == access("./msg/msgfile", F_OK)) {
+		creat("./msg/msgfile",  0644);	
+	}
+
+	rfp = fopen("./msg/msgfile", "r");
+	assert(rfp != NULL);
+
+	wfp = fopen("./msg/msgfile", "a+");
+	assert(wfp != NULL);
 
 	listenfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (listenfd < 0) {
@@ -133,12 +146,13 @@ int main(int argc, char *argv[])
 					} else {
 						int len = strlen("putmsg#");
 						if (strncmp(buf, "putmsg#", len) == 0) {
-							putmsg(fp, buf+len, n-len);	
+							putmsg(wfp, buf+len, n-len);	
 
 						} else if (strncmp(buf, "getmsg#", strlen("getmsg#")) == 0) {
 
 							printf("##Get Message\n");		
-							getmsg(newfd, fp);	
+							getmsg(newfd, rfp);	
+
 						} else {
 							printf("unrecognized msg\n");		
 						}
@@ -151,19 +165,23 @@ int main(int argc, char *argv[])
 
 	free(events);
 	close(listenfd);
-	fclose(fp);
+	fclose(rfp);
+	fclose(wfp);
+
 	return 0;
 }
 
 int putmsg(FILE *fp, char *buf, int buflen)
 {
 	int n = 0;
-	assert(fp != NULL && buf != NULL);
+	assert(buf != NULL);
 
 	n = fwrite(buf, buflen, 1, fp);
 	assert(n == 1);
+	fputc('\n', fp);
 
 	fflush(fp);
+
 	return 0;
 }
 

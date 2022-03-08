@@ -1,13 +1,22 @@
-all: broker client
+all: broker producer consumer
 
-client:client.o
-	gcc -o client client.o
+producer:producer.o 
+	gcc -o producer producer.o
 	mkdir -p bin/.
-	mv client bin/.
-	rm client.o
+	mv producer bin/.
+	rm producer.o
 
-client.o: client.c
-	gcc -c client.c
+producer.o: producer.c 
+	gcc -c producer.c
+
+consumer:consumer.o 
+	gcc -o consumer consumer.o
+	mkdir -p bin/.
+	mv consumer bin/.
+	rm consumer.o
+
+consumer.o: consumer.c 
+	gcc -c consumer.c
 
 broker:broker.o
 	gcc -o broker broker.o
@@ -20,4 +29,4 @@ broker.o:broker.c
 
 
 clean:
-	rm -rf bin/
+	rm -rf bin/ msg/
