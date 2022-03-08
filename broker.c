@@ -14,6 +14,8 @@
 #define MAXEVENTS 64
 
 void make_nonblocking(int fd);
+int putmsg(FILE *fp, char *buf, int buflen);
+int getmsg(int newfd, FILE *fp);
 
 int main(int argc, char *argv[])
 {
@@ -28,6 +30,10 @@ int main(int argc, char *argv[])
 	struct sockaddr_in servaddr;
 	struct sockaddr_in cliaddr;
 	socklen_t socklen;
+	FILE *fp = NULL;
+
+	fp = fopen("./msgfile", "w+");
+	assert(fp!=NULL);
 
 	listenfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (listenfd < 0) {
@@ -110,6 +116,7 @@ int main(int argc, char *argv[])
 					return -1;
 				}
 				continue;
+
 			} else {
 				int newfd = events[i].data.fd;
 				while (1) {
@@ -124,11 +131,18 @@ int main(int argc, char *argv[])
 						close(newfd);	
 						break;
 					} else {
-						ret = write(newfd, buf, n);	
-						if (ret < 0) {
-							printf("write error\n");	
-							return -1;
+						int len = strlen("putmsg#");
+						if (strncmp(buf, "putmsg#", len) == 0) {
+							putmsg(fp, buf+len, n-len);	
+
+						} else if (strncmp(buf, "getmsg#", strlen("getmsg#")) == 0) {
+
+							printf("##Get Message\n");		
+							getmsg(newfd, fp);	
+						} else {
+							printf("unrecognized msg\n");		
 						}
+
 					}
 				}	
 			}
@@ -137,7 +151,30 @@ int main(int argc, char *argv[])
 
 	free(events);
 	close(listenfd);
+	fclose(fp);
 	return 0;
+}
+
+int putmsg(FILE *fp, char *buf, int buflen)
+{
+	int n = 0;
+	assert(fp != NULL && buf != NULL);
+
+	n = fwrite(buf, buflen, 1, fp);
+	assert(n == 1);
+
+	fflush(fp);
+	return 0;
+}
+
+int getmsg(int newfd, FILE *fp)	
+{
+	char buf[512] = {0};
+
+	fgets(buf, 512, fp);
+	buf[strlen(buf)-1] = '\0';
+
+	write(newfd, buf, strlen(buf));
 }
 
 void make_nonblocking(int fd)
